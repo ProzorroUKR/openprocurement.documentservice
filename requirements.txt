@@ -34,4 +34,4 @@ venusian==1.0
 waitress==0.8.10
 zope.deprecation==4.1.1
 zope.interface==4.1.1
-git+https://github.com/openprocurement/rfc6266.git
+git+https://github.com/ProzorroUKR/rfc6266.git
