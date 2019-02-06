@@ -19,6 +19,8 @@ requires = [
     'setuptools',
 ]
 test_requires = requires + [
+    'pytest',
+    'pytest-cov',
     'webtest',
     'mock',
     'python-coveralls',

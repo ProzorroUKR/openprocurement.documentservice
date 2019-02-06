@@ -1,0 +1,13 @@
+image: docker:stable
+stages:
+  - test
+
+test:
+  image: prozorro/base:ci
+  stage: test
+  before_script:
+    - pip install -r requirements.txt
+    - pip install -e .[test]
+  script:
+    - py.test --cov=openprocurement.documentservice
+  coverage: '/TOTAL\s+\d+\s+\d+\s+(\d+%)/'
