@@ -53,7 +53,7 @@ def request_params(request):
         response.body = dumps(error_handler(request, response.code, {"location": "body", "name": "data", "description": "could not decode params"}))
         response.content_type = 'application/json'
         raise response
-    except Exception, e:
+    except Exception as e:
         response = exception_response(422)
         response.body = dumps(error_handler(request, response.code, {"location": "body", "name": str(e.__class__.__name__), "description": str(e)}))
         response.content_type = 'application/json'
@@ -127,3 +127,30 @@ def close_open_files(request):
 def new_request_subscriber(event):
     request = event.request
     request.add_finished_callback(close_open_files)
+
+
+class RequestFailure(Exception):
+    def __init__(self, status, location, name, description):
+        self.status = status
+        self.location = location
+        self.name = name
+        self.description = description
+
+
+def validate_md5(md5_hash):
+    if not md5_hash.startswith('md5:'):
+        raise RequestFailure(422, "body", "hash", [u'Hash type is not supported.'])
+    if len(md5_hash) != 36:
+        raise RequestFailure(422, "body", "hash", [u'Hash value is wrong length.'])
+    if set(md5_hash[4:]).difference('0123456789abcdef'):
+        raise RequestFailure(422, "body", "hash", [u'Hash value is not hexadecimal.'])
+
+
+def get_data(request):
+    try:
+        json = request.json_body
+    except ValueError:
+        data = request.POST.mixed()
+    else:
+        data = json.get('data', {})
+    return data

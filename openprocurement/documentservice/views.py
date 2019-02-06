@@ -1,7 +1,8 @@
 from base64 import b64encode, b64decode
 from logging import getLogger
 from openprocurement.documentservice.storage import StorageRedirect, HashInvalid, KeyNotFound, NoContent, ContentUploaded, StorageUploadError
-from openprocurement.documentservice.utils import error_handler, context_unpack
+from openprocurement.documentservice.utils import error_handler, context_unpack, validate_md5, RequestFailure, \
+    get_data
 from pyramid.httpexceptions import HTTPNoContent
 from pyramid.view import view_config
 from time import time
@@ -16,38 +17,23 @@ def status_view(request):
     return ''
 
 
-def get_data(request):
-    try:
-        json = request.json_body
-    except ValueError:
-        data = request.POST.mixed()
-    else:
-        data = json.get('data', {})
-    return data
-
-
 @view_config(route_name='register', renderer='json', request_method='POST', permission='upload')
 def register_view(request):
     data = get_data(request)
     if not isinstance(data, dict) or 'hash' not in data:
-        return error_handler(request, 404, {"location": "body", "name": "hash", "description": "Not Found"})
-    md5 = data['hash']
-    if not md5.startswith('md5:'):
-        return error_handler(request, 422, {"location": "body", "name": "hash", "description": [u'Hash type is not supported.']})
-    if len(md5) != 36:
-        return error_handler(request, 422, {"location": "body", "name": "hash", "description": [u'Hash value is wrong length.']})
-    if set(md5[4:]).difference('0123456789abcdef'):
-        return error_handler(request, 422, {"location": "body", "name": "hash", "description": [u'Hash value is not hexadecimal.']})
+        raise RequestFailure(404, 'body', 'hash', 'Not Found')
+    md5_hash = data['hash']
+    validate_md5(md5_hash)
     try:
-        uuid = request.registry.storage.register(md5)
+        uuid = request.registry.storage.register(md5_hash)
     except StorageUploadError as exc:
         LOGGER.error('Storage error: %s', exc.message, extra=context_unpack(request, {'MESSAGE_ID': 'storage_error'}))
         return error_handler(request, 502, {"description": "Upload failed, please try again later"})
     LOGGER.info('Registered new document upload {}'.format(uuid),
-                extra=context_unpack(request, {'MESSAGE_ID': 'registered_upload'}, {'doc_id': uuid, 'doc_hash': md5}))
+                extra=context_unpack(request, {'MESSAGE_ID': 'registered_upload'}, {'doc_id': uuid, 'doc_hash': md5_hash}))
     signature = quote(b64encode(request.registry.signer.signature(uuid)))
     upload_url = request.route_url('upload_file', doc_id=uuid, _query={'Signature': signature, 'KeyID': request.registry.dockey}, _host=request.registry.upload_host or request.domain, _port=request.host_port)
-    signature = quote(b64encode(request.registry.signer.signature("{}\0{}".format(uuid, md5[4:]))))
+    signature = quote(b64encode(request.registry.signer.signature("{}\0{}".format(uuid, md5_hash[4:]))))
     data['url'] = request.route_url('get', doc_id=uuid, _query={'Signature': signature, 'KeyID': request.registry.dockey}, _host=request.registry.get_host or request.domain, _port=request.host_port)
     request.response.status = 201
     request.response.headers['Location'] = upload_url
@@ -162,3 +148,9 @@ def get_view(request):
         request.response.content_disposition = doc['Content-Disposition']
         request.response.body = doc['Content']
         return request.response
+
+
+@view_config(context=RequestFailure, renderer='json')
+def request_failure(exc, request):
+    body = {"location": exc.location, "name": exc.name, "description": exc.description}
+    return error_handler(request, exc.status, body)
