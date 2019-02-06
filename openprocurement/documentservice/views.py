@@ -1,8 +1,9 @@
 from base64 import b64encode, b64decode
 from logging import getLogger
-from openprocurement.documentservice.storage import StorageRedirect, HashInvalid, KeyNotFound, NoContent, ContentUploaded, StorageUploadError
-from openprocurement.documentservice.utils import error_handler, context_unpack, validate_md5, RequestFailure, \
-    get_data
+from openprocurement.documentservice.storage import (
+    StorageRedirect, HashInvalid, KeyNotFound, NoContent, ContentUploaded, StorageUploadError)
+from openprocurement.documentservice.utils import (
+    error_handler, context_unpack, validate_md5, RequestFailure, get_data)
 from pyramid.httpexceptions import HTTPNoContent
 from pyramid.view import view_config
 from time import time
@@ -24,11 +25,7 @@ def register_view(request):
         raise RequestFailure(404, 'body', 'hash', 'Not Found')
     md5_hash = data['hash']
     validate_md5(md5_hash)
-    try:
-        uuid = request.registry.storage.register(md5_hash)
-    except StorageUploadError as exc:
-        LOGGER.error('Storage error: %s', exc.message, extra=context_unpack(request, {'MESSAGE_ID': 'storage_error'}))
-        return error_handler(request, 502, {"description": "Upload failed, please try again later"})
+    uuid = request.registry.storage.register(md5_hash)
     LOGGER.info('Registered new document upload {}'.format(uuid),
                 extra=context_unpack(request, {'MESSAGE_ID': 'registered_upload'}, {'doc_id': uuid, 'doc_hash': md5_hash}))
     signature = quote(b64encode(request.registry.signer.signature(uuid)))
@@ -43,13 +40,9 @@ def register_view(request):
 @view_config(route_name='upload', renderer='json', request_method='POST', permission='upload')
 def upload_view(request):
     if 'file' not in request.POST or not hasattr(request.POST['file'], 'filename'):
-        return error_handler(request, 404, {"location": "body", "name": "file", "description": "Not Found"})
+        raise RequestFailure(404, 'body', 'file', 'Not Found')
     post_file = request.POST['file']
-    try:
-        uuid, md5, content_type, filename = request.registry.storage.upload(post_file)
-    except StorageUploadError as exc:
-        LOGGER.error('Storage error: %s', exc.message, extra=context_unpack(request, {'MESSAGE_ID': 'storage_error'}))
-        return error_handler(request, 502, {"description": "Upload failed, please try again later"})
+    uuid, md5, content_type, filename = request.registry.storage.upload(post_file)
     LOGGER.info('Uploaded new document {}'.format(uuid),
                 extra=context_unpack(request, {'MESSAGE_ID': 'uploaded_new_document'}, {'doc_id': uuid, 'doc_hash': md5}))
     expires = int(time()) + EXPIRES
@@ -64,7 +57,7 @@ def upload_view(request):
 @view_config(route_name='upload_file', renderer='json', request_method='POST', permission='upload')
 def upload_file_view(request):
     if 'file' not in request.POST or not hasattr(request.POST['file'], 'filename'):
-        return error_handler(request, 404, {"location": "body", "name": "file", "description": "Not Found"})
+        raise RequestFailure(404, 'body', 'file', 'Not Found')
     uuid = request.matchdict['doc_id']
     keyid = request.GET.get('KeyID', request.registry.dockey)
     if keyid not in request.registry.dockeyring:
@@ -86,14 +79,12 @@ def upload_file_view(request):
     try:
         uuid, md5, content_type, filename = request.registry.storage.upload(post_file, uuid)
     except KeyNotFound:
-        return error_handler(request, 404, {"location": "url", "name": "doc_id", "description": "Not Found"})
+        raise RequestFailure(404, 'url', 'doc_id', 'Not Found')
     except ContentUploaded:
-        return error_handler(request, 403, {"location": "url", "name": "doc_id", "description": "Content already uploaded"})
+        raise RequestFailure(403, 'url', 'doc_id', 'Content already uploaded')
     except HashInvalid:
-        return error_handler(request, 403, {"location": "body", "name": "file", "description": "Invalid checksum"})
-    except StorageUploadError as exc:
-        LOGGER.error('Storage error: %s', exc.message, extra=context_unpack(request, {'MESSAGE_ID': 'storage_error'}))
-        return error_handler(request, 502, {"description": "Upload failed, please try again later"})
+        raise RequestFailure(403, 'body', 'file', 'Invalid checksum')
+
     LOGGER.info('Uploaded document {}'.format(uuid),
                 extra=context_unpack(request, {'MESSAGE_ID': 'uploaded_document'}, {'doc_hash': md5}))
     expires = int(time()) + EXPIRES
@@ -136,7 +127,7 @@ def get_view(request):
     try:
         doc = request.registry.storage.get(uuid)
     except KeyNotFound:
-        return error_handler(request, 404, {"location": "url", "name": "doc_id", "description": "Not Found"})
+        raise RequestFailure(404, 'url', 'doc_id', 'Not Found')
     except NoContent:
         return HTTPNoContent()
     except StorageRedirect as e:
@@ -154,3 +145,9 @@ def get_view(request):
 def request_failure(exc, request):
     body = {"location": exc.location, "name": exc.name, "description": exc.description}
     return error_handler(request, exc.status, body)
+
+
+@view_config(context=StorageUploadError, renderer='json')
+def storage_upload_error(exc, request):
+    LOGGER.error('Storage error: %s', exc.message, extra=context_unpack(request, {'MESSAGE_ID': 'storage_error'}))
+    return error_handler(request, 502, {"description": "Upload failed, please try again later"})
