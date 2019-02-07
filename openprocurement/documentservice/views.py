@@ -43,11 +43,25 @@ def signed_request(check_expire):
                 if keyid not in request.registry.dockeyring:
                     raise RequestFailure(403, 'url', 'KeyID', 'Key Id does not exist')
                 key = request.registry.dockeyring.get(keyid)
+
             if 'Signature' not in request.GET:
                 raise RequestFailure(403, 'url', 'Signature', 'Not Found')
-            return view_callable(request, key, *args, **kwargs)
+            signature = request.GET['Signature']
+            try:
+                signature = b64decode(unquote(signature))
+            except TypeError:
+                raise RequestFailure(403, 'url', 'Signature', 'Signature invalid')
+            return view_callable(request, key, signature, *args, **kwargs)
         return inner
     return decorator
+
+
+def verify_signature(key, mess, signature):
+    try:
+        if mess != key.verify(signature + mess.encode('utf-8')):
+            raise ValueError
+    except ValueError:
+        raise RequestFailure(403, 'url', 'Signature', 'Signature does not match')
 
 
 @view_config(route_name='status', renderer='string')
@@ -93,18 +107,9 @@ def upload_view(request):
 @view_config(route_name='upload_file', renderer='json', request_method='POST', permission='upload')
 @file_request
 @signed_request(check_expire=False)
-def upload_file_view(request, key):
+def upload_file_view(request, key, signature):
     uuid = request.matchdict['doc_id']
-    signature = request.GET['Signature']
-    try:
-        signature = b64decode(unquote(signature))
-    except TypeError:
-        raise RequestFailure(403, 'url', 'Signature', 'Signature invalid')
-    try:
-        if uuid != key.verify(signature + uuid.encode("utf-8")):
-            raise ValueError
-    except ValueError:
-        raise RequestFailure(403, 'url', 'Signature', 'Signature does not match')
+    verify_signature(key, uuid.encode('utf-8'), signature)
     post_file = request.POST['file']
     try:
         uuid, md5, content_type, filename = request.registry.storage.upload(post_file, uuid)
@@ -127,23 +132,13 @@ def upload_file_view(request, key):
 
 @view_config(route_name='get', renderer='json', request_method='GET')
 @signed_request(check_expire=True)
-def get_view(request, key, expires=None):
+def get_view(request, key, signature, expires=None):
     uuid = request.matchdict['doc_id']
     mess = "{}\0{}".format(uuid, expires) if expires else uuid
     if request.GET.get('Prefix'):
         mess = '{}/{}'.format(request.GET['Prefix'], mess)
         uuid = '{}/{}'.format(request.GET['Prefix'], uuid)
-
-    signature = request.GET['Signature']
-    try:
-        signature = b64decode(unquote(signature))
-    except TypeError:
-        raise RequestFailure(403, 'url', 'Signature', 'Signature invalid')
-    try:
-        if mess != key.verify(signature + mess.encode("utf-8")):
-            raise ValueError
-    except ValueError:
-        raise RequestFailure(403, 'url', 'Signature', 'Signature does not match')
+    verify_signature(key, mess, signature)
     try:
         doc = request.registry.storage.get(uuid)
     except KeyNotFound:
