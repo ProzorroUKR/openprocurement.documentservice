@@ -1,67 +1,17 @@
-from base64 import b64encode, b64decode
+from base64 import b64encode
 from logging import getLogger
 from openprocurement.documentservice.storage import (
     StorageRedirect, HashInvalid, KeyNotFound, NoContent, ContentUploaded, StorageUploadError)
 from openprocurement.documentservice.utils import (
-    error_handler, context_unpack, validate_md5, RequestFailure, get_data)
+    error_handler, context_unpack, validate_md5, RequestFailure, get_data, file_request, signed_request,
+    verify_signature)
 from pyramid.httpexceptions import HTTPNoContent
 from pyramid.view import view_config
 from time import time
-from urllib import quote, unquote
+from urllib import quote
 
 LOGGER = getLogger(__name__)
 EXPIRES = 300
-
-
-def file_request(view_callable):
-    def inner(request):
-        if 'file' not in request.POST or not hasattr(request.POST['file'], 'filename'):
-            raise RequestFailure(404, 'body', 'file', 'Not Found')
-        return view_callable(request)
-    return inner
-
-
-def signed_request(check_expire):
-    def decorator(view_callable, *args, **kwargs):
-        def inner(request):
-            keyid = request.GET.get('KeyID', request.registry.dockey)
-            if check_expire:
-                now = int(time())
-                expires = request.GET.get('Expires')
-                if expires:
-                    if expires.isdigit() and int(expires) < now:
-                        raise RequestFailure(403, 'url', 'Expires', 'Request has expired')
-                    else:
-                        kwargs['expires'] = int(expires)
-                if keyid not in (request.registry.apikey, request.registry.dockey) and not expires:
-                    raise RequestFailure(403, 'url', 'KeyID', 'Key Id does permit to get private document')
-                if keyid not in request.registry.keyring:
-                    raise RequestFailure(403, 'url', 'KeyID', 'Key Id does not exist')
-                key = request.registry.keyring.get(keyid)
-
-            else:
-                if keyid not in request.registry.dockeyring:
-                    raise RequestFailure(403, 'url', 'KeyID', 'Key Id does not exist')
-                key = request.registry.dockeyring.get(keyid)
-
-            if 'Signature' not in request.GET:
-                raise RequestFailure(403, 'url', 'Signature', 'Not Found')
-            signature = request.GET['Signature']
-            try:
-                signature = b64decode(unquote(signature))
-            except TypeError:
-                raise RequestFailure(403, 'url', 'Signature', 'Signature invalid')
-            return view_callable(request, key, signature, *args, **kwargs)
-        return inner
-    return decorator
-
-
-def verify_signature(key, mess, signature):
-    try:
-        if mess != key.verify(signature + mess.encode('utf-8')):
-            raise ValueError
-    except ValueError:
-        raise RequestFailure(403, 'url', 'Signature', 'Signature does not match')
 
 
 @view_config(route_name='status', renderer='string')

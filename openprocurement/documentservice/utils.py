@@ -1,6 +1,9 @@
 import os
 from ConfigParser import ConfigParser
+from base64 import b64decode
 from datetime import datetime
+from time import time
+from urllib import unquote
 from hashlib import sha512
 from json import dumps
 from logging import getLogger
@@ -154,3 +157,56 @@ def get_data(request):
     else:
         data = json.get('data', {})
     return data
+
+
+def verify_signature(key, mess, signature):
+    try:
+        if mess != key.verify(signature + mess.encode('utf-8')):
+            raise ValueError
+    except ValueError:
+        raise RequestFailure(403, 'url', 'Signature', 'Signature does not match')
+
+
+# Request decorators
+def file_request(view_callable):
+    def inner(request):
+        if 'file' not in request.POST or not hasattr(request.POST['file'], 'filename'):
+            raise RequestFailure(404, 'body', 'file', 'Not Found')
+        return view_callable(request)
+    return inner
+
+
+def signed_request(check_expire):
+    def decorator(view_callable, *args, **kwargs):
+        def inner(request):
+            keyid = request.GET.get('KeyID', request.registry.dockey)
+            if check_expire:
+                now = int(time())
+                expires = request.GET.get('Expires')
+                if expires:
+                    if expires.isdigit() and int(expires) < now:
+                        raise RequestFailure(403, 'url', 'Expires', 'Request has expired')
+                    else:
+                        kwargs['expires'] = int(expires)
+                if keyid not in (request.registry.apikey, request.registry.dockey) and not expires:
+                    raise RequestFailure(403, 'url', 'KeyID', 'Key Id does permit to get private document')
+                if keyid not in request.registry.keyring:
+                    raise RequestFailure(403, 'url', 'KeyID', 'Key Id does not exist')
+                key = request.registry.keyring.get(keyid)
+
+            else:
+                if keyid not in request.registry.dockeyring:
+                    raise RequestFailure(403, 'url', 'KeyID', 'Key Id does not exist')
+                key = request.registry.dockeyring.get(keyid)
+
+            if 'Signature' not in request.GET:
+                raise RequestFailure(403, 'url', 'Signature', 'Not Found')
+            signature = request.GET['Signature']
+            try:
+                signature = b64decode(unquote(signature))
+            except TypeError:
+                raise RequestFailure(403, 'url', 'Signature', 'Signature invalid')
+            return view_callable(request, key, signature, *args, **kwargs)
+        return inner
+    return decorator
+
