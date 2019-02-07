@@ -11,7 +11,7 @@ version = '1.2.0'
 requires = [
     'gunicorn',
     'gevent',
-    'libnacl',
+    'pynacl',
     'pyramid',
     'pyramid_exclog',
     'pytz',

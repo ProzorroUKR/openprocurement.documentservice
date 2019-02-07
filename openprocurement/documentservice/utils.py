@@ -8,6 +8,7 @@ from six.moves.urllib.parse import unquote, quote
 from hashlib import sha512
 from json import dumps
 from logging import getLogger
+from nacl.exceptions import BadSignatureError
 from pyramid.security import Allow
 from pyramid.httpexceptions import exception_response
 from pytz import timezone
@@ -163,14 +164,14 @@ def get_data(request):
 
 
 def sign_data(signer, msg):
-    return quote(b64encode(signer.signature(msg)))
+    sign = signer.sign(msg).signature
+    return quote(b64encode(sign))
 
 
 def verify_signature(key, mess, signature):
     try:
-        if mess != key.verify(signature + mess.encode('utf-8')):
-            raise ValueError
-    except ValueError:
+        key.verify(mess.encode('utf-8'), signature)
+    except BadSignatureError:
         raise RequestFailure(403, 'url', 'Signature', 'Signature does not match')
 
 
