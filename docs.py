@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import json
 import os
+import unittest
 from datetime import timedelta, datetime
 from uuid import uuid4
 from hashlib import md5
@@ -86,3 +87,13 @@ class TenderResourceTest(BaseWebTest):
             self.assertEqual(response.status, '200 OK')
             self.assertEqual(response.content_type, 'application/json')
             self.assertIn('http://docs-sandbox.openprocurement.org/get/', response.json['get_url'])
+
+
+def suite():
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(TenderResourceTest))
+    return suite
+
+
+if __name__ == '__main__':
+    unittest.main(defaultTest='suite')
