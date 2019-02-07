@@ -21,12 +21,33 @@ def file_request(view_callable):
     return inner
 
 
-def signed_request(view_callable):
-    def inner(request):
-        if 'Signature' not in request.GET:
-            raise RequestFailure(403, 'url', 'Signature', 'Not Found')
-        return view_callable(request)
-    return inner
+def signed_request(check_expire):
+    def decorator(view_callable, *args, **kwargs):
+        def inner(request):
+            keyid = request.GET.get('KeyID', request.registry.dockey)
+            if check_expire:
+                now = int(time())
+                expires = request.GET.get('Expires')
+                if expires:
+                    if expires.isdigit() and int(expires) < now:
+                        raise RequestFailure(403, 'url', 'Expires', 'Request has expired')
+                    else:
+                        kwargs['expires'] = int(expires)
+                if keyid not in (request.registry.apikey, request.registry.dockey) and not expires:
+                    raise RequestFailure(403, 'url', 'KeyID', 'Key Id does permit to get private document')
+                if keyid not in request.registry.keyring:
+                    raise RequestFailure(403, 'url', 'KeyID', 'Key Id does not exist')
+                key = request.registry.keyring.get(keyid)
+
+            else:
+                if keyid not in request.registry.dockeyring:
+                    raise RequestFailure(403, 'url', 'KeyID', 'Key Id does not exist')
+                key = request.registry.dockeyring.get(keyid)
+            if 'Signature' not in request.GET:
+                raise RequestFailure(403, 'url', 'Signature', 'Not Found')
+            return view_callable(request, key, *args, **kwargs)
+        return inner
+    return decorator
 
 
 @view_config(route_name='status', renderer='string')
@@ -71,14 +92,9 @@ def upload_view(request):
 
 @view_config(route_name='upload_file', renderer='json', request_method='POST', permission='upload')
 @file_request
-def upload_file_view(request):
+@signed_request(check_expire=False)
+def upload_file_view(request, key):
     uuid = request.matchdict['doc_id']
-    keyid = request.GET.get('KeyID', request.registry.dockey)
-    if keyid not in request.registry.dockeyring:
-        raise RequestFailure(403, 'url', 'KeyID', 'Key Id does not exist')
-    key = request.registry.dockeyring.get(keyid)
-    if 'Signature' not in request.GET:
-        raise RequestFailure(403, 'url', 'Signature', 'Not Found')
     signature = request.GET['Signature']
     try:
         signature = b64decode(unquote(signature))
@@ -110,26 +126,13 @@ def upload_file_view(request):
 
 
 @view_config(route_name='get', renderer='json', request_method='GET')
-# @signed_request
-def get_view(request):
+@signed_request(check_expire=True)
+def get_view(request, key, expires=None):
     uuid = request.matchdict['doc_id']
-    now = int(time())
-    expires = request.GET.get('Expires')
-    if expires and expires.isdigit() and int(expires) < now:
-        raise RequestFailure(403, 'url', 'Expires', 'Request has expired')
-    keyid = request.GET.get('KeyID', request.registry.dockey)
-    if keyid not in (request.registry.apikey, request.registry.dockey) and not expires:
-        raise RequestFailure(403, 'url', 'KeyID', 'Key Id does permit to get private document')
-    if keyid not in request.registry.keyring:
-        raise RequestFailure(403, 'url', 'KeyID', 'Key Id does not exist')
-
     mess = "{}\0{}".format(uuid, expires) if expires else uuid
     if request.GET.get('Prefix'):
         mess = '{}/{}'.format(request.GET['Prefix'], mess)
         uuid = '{}/{}'.format(request.GET['Prefix'], uuid)
-    key = request.registry.keyring.get(keyid)
-    if 'Signature' not in request.GET:
-        raise RequestFailure(403, 'url', 'Signature', 'Not Found')
 
     signature = request.GET['Signature']
     try:
@@ -160,11 +163,11 @@ def get_view(request):
 
 @view_config(context=RequestFailure, renderer='json')
 def request_failure(exc, request):
-    body = {"location": exc.location, "name": exc.name, "description": exc.description}
+    body = {'location': exc.location, 'name': exc.name, 'description': exc.description}
     return error_handler(request, exc.status, body)
 
 
 @view_config(context=StorageUploadError, renderer='json')
 def storage_upload_error(exc, request):
     LOGGER.error('Storage error: %s', exc.message, extra=context_unpack(request, {'MESSAGE_ID': 'storage_error'}))
-    return error_handler(request, 502, {"description": "Upload failed, please try again later"})
+    return error_handler(request, 502, {'description': 'Upload failed, please try again later'})
