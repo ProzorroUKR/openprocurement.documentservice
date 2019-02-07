@@ -13,6 +13,22 @@ LOGGER = getLogger(__name__)
 EXPIRES = 300
 
 
+def file_request(view_callable):
+    def inner(request):
+        if 'file' not in request.POST or not hasattr(request.POST['file'], 'filename'):
+            raise RequestFailure(404, 'body', 'file', 'Not Found')
+        return view_callable(request)
+    return inner
+
+
+def signed_request(view_callable):
+    def inner(request):
+        if 'Signature' not in request.GET:
+            raise RequestFailure(403, 'url', 'Signature', 'Not Found')
+        return view_callable(request)
+    return inner
+
+
 @view_config(route_name='status', renderer='string')
 def status_view(request):
     return ''
@@ -38,9 +54,8 @@ def register_view(request):
 
 
 @view_config(route_name='upload', renderer='json', request_method='POST', permission='upload')
+@file_request
 def upload_view(request):
-    if 'file' not in request.POST or not hasattr(request.POST['file'], 'filename'):
-        raise RequestFailure(404, 'body', 'file', 'Not Found')
     post_file = request.POST['file']
     uuid, md5, content_type, filename = request.registry.storage.upload(post_file)
     LOGGER.info('Uploaded new document {}'.format(uuid),
@@ -55,26 +70,25 @@ def upload_view(request):
 
 
 @view_config(route_name='upload_file', renderer='json', request_method='POST', permission='upload')
+@file_request
 def upload_file_view(request):
-    if 'file' not in request.POST or not hasattr(request.POST['file'], 'filename'):
-        raise RequestFailure(404, 'body', 'file', 'Not Found')
     uuid = request.matchdict['doc_id']
     keyid = request.GET.get('KeyID', request.registry.dockey)
     if keyid not in request.registry.dockeyring:
-        return error_handler(request, 403, {"location": "url", "name": "KeyID", "description": "Key Id does not exist"})
+        raise RequestFailure(403, 'url', 'KeyID', 'Key Id does not exist')
     key = request.registry.dockeyring.get(keyid)
     if 'Signature' not in request.GET:
-        return error_handler(request, 403, {"location": "url", "name": "Signature", "description": "Not Found"})
+        raise RequestFailure(403, 'url', 'Signature', 'Not Found')
     signature = request.GET['Signature']
     try:
         signature = b64decode(unquote(signature))
     except TypeError:
-        return error_handler(request, 403, {"location": "url", "name": "Signature", "description": "Signature invalid"})
+        raise RequestFailure(403, 'url', 'Signature', 'Signature invalid')
     try:
         if uuid != key.verify(signature + uuid.encode("utf-8")):
             raise ValueError
     except ValueError:
-        return error_handler(request, 403, {"location": "url", "name": "Signature", "description": "Signature does not match"})
+        raise RequestFailure(403, 'url', 'Signature', 'Signature does not match')
     post_file = request.POST['file']
     try:
         uuid, md5, content_type, filename = request.registry.storage.upload(post_file, uuid)
@@ -96,34 +110,37 @@ def upload_file_view(request):
 
 
 @view_config(route_name='get', renderer='json', request_method='GET')
+# @signed_request
 def get_view(request):
     uuid = request.matchdict['doc_id']
     now = int(time())
     expires = request.GET.get('Expires')
     if expires and expires.isdigit() and int(expires) < now:
-        return error_handler(request, 403, {"location": "url", "name": "Expires", "description": "Request has expired"})
+        raise RequestFailure(403, 'url', 'Expires', 'Request has expired')
     keyid = request.GET.get('KeyID', request.registry.dockey)
     if keyid not in (request.registry.apikey, request.registry.dockey) and not expires:
-        return error_handler(request, 403, {"location": "url", "name": "KeyID", "description": "Key Id does permit to get private document"})
+        raise RequestFailure(403, 'url', 'KeyID', 'Key Id does permit to get private document')
     if keyid not in request.registry.keyring:
-        return error_handler(request, 403, {"location": "url", "name": "KeyID", "description": "Key Id does not exist"})
+        raise RequestFailure(403, 'url', 'KeyID', 'Key Id does not exist')
+
     mess = "{}\0{}".format(uuid, expires) if expires else uuid
     if request.GET.get('Prefix'):
         mess = '{}/{}'.format(request.GET['Prefix'], mess)
         uuid = '{}/{}'.format(request.GET['Prefix'], uuid)
     key = request.registry.keyring.get(keyid)
     if 'Signature' not in request.GET:
-        return error_handler(request, 403, {"location": "url", "name": "Signature", "description": "Not Found"})
+        raise RequestFailure(403, 'url', 'Signature', 'Not Found')
+
     signature = request.GET['Signature']
     try:
         signature = b64decode(unquote(signature))
     except TypeError:
-        return error_handler(request, 403, {"location": "url", "name": "Signature", "description": "Signature invalid"})
+        raise RequestFailure(403, 'url', 'Signature', 'Signature invalid')
     try:
         if mess != key.verify(signature + mess.encode("utf-8")):
             raise ValueError
     except ValueError:
-        return error_handler(request, 403, {"location": "url", "name": "Signature", "description": "Signature does not match"})
+        raise RequestFailure(403, 'url', 'Signature', 'Signature does not match')
     try:
         doc = request.registry.storage.get(uuid)
     except KeyNotFound:
