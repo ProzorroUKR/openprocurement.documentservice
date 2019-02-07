@@ -1,9 +1,9 @@
 import os
 from ConfigParser import ConfigParser
-from base64 import b64decode
+from base64 import b64decode, b64encode
 from datetime import datetime
 from time import time
-from urllib import unquote
+from urllib import unquote, quote
 from hashlib import sha512
 from json import dumps
 from logging import getLogger
@@ -159,12 +159,23 @@ def get_data(request):
     return data
 
 
+def sign_data(signer, msg):
+    return quote(b64encode(signer.signature(msg)))
+
+
 def verify_signature(key, mess, signature):
     try:
         if mess != key.verify(signature + mess.encode('utf-8')):
             raise ValueError
     except ValueError:
         raise RequestFailure(403, 'url', 'Signature', 'Signature does not match')
+
+
+def generate_route(request, name, uuid, params):
+    query = {'KeyID': request.registry.dockey}
+    query.update(params)
+    return request.route_url(name, doc_id=uuid, _query=query, _port=request.host_port,
+                             _host=request.registry.upload_host or request.domain)
 
 
 # Request decorators
