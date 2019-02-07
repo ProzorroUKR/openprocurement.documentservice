@@ -1,9 +1,9 @@
 import os
-from ConfigParser import ConfigParser
+from six.moves.configparser import ConfigParser
 from base64 import b64decode, b64encode
 from datetime import datetime
 from time import time
-from urllib import unquote, quote
+from six.moves.urllib.parse import unquote, quote
 from hashlib import sha512
 from json import dumps
 from logging import getLogger

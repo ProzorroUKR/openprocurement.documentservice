@@ -4,7 +4,7 @@ import mock
 import unittest
 from hashlib import md5
 from six import BytesIO
-from urllib import quote
+from six.moves.urllib.parse import quote
 from openprocurement.documentservice.tests.base import BaseWebTest
 from openprocurement.documentservice.storage import StorageUploadError
 
