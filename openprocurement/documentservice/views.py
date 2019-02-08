@@ -120,5 +120,4 @@ def request_failure(exc, request):
 
 @view_config(context=StorageUploadError, renderer='json')
 def storage_upload_error(exc, request):
-    LOGGER.error('Storage error: %s', exc.message, extra=context_unpack(request, {'MESSAGE_ID': 'storage_error'}))
     return error_handler(request, 502, {'description': 'Upload failed, please try again later'})
