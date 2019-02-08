@@ -107,7 +107,8 @@ def get_view(request, key, signature, expires=None):
         return e.url
     else:
         request.response.content_type = doc['Content-Type']
-        request.response.content_disposition = doc['Content-Disposition']
+        if 'Content-Disposition' in doc:
+            request.response.content_disposition = doc['Content-Disposition'].decode('utf-8')
         request.response.body = doc['Content']
         return request.response
 

@@ -5,6 +5,7 @@ from base64 import b64decode, b64encode
 from datetime import datetime
 from time import time
 from six.moves.urllib.parse import unquote, quote
+from six import b, text_type
 from hashlib import sha512
 from json import dumps
 from logging import getLogger
@@ -22,7 +23,7 @@ JOURNAL_PREFIX = os.environ.get('JOURNAL_PREFIX', 'JOURNAL_')
 
 
 def auth_check(username, password, request):
-    if username in USERS and USERS[username]['password'] == sha512(password).hexdigest():
+    if username in USERS and USERS[username]['password'] == sha512(b(password)).hexdigest():
         return ['g:{}'.format(USERS[username]['group'])]
 
 
@@ -164,13 +165,15 @@ def get_data(request):
 
 
 def sign_data(signer, msg):
-    sign = signer.sign(msg).signature
+    sign = signer.sign(b(msg)).signature
     return quote(b64encode(sign))
 
 
 def verify_signature(key, mess, signature):
     try:
-        key.verify(mess.encode('utf-8'), signature)
+        if isinstance(mess, text_type):
+            mess = mess.encode('utf-8')
+        key.verify(mess, signature)
     except BadSignatureError:
         raise RequestFailure(403, 'url', 'Signature', 'Signature does not match')
 

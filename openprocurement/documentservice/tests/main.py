@@ -2,8 +2,10 @@
 
 import mock
 import unittest
+import sys
+import pytest
 from hashlib import md5
-from six import BytesIO
+from six import BytesIO, b
 from six.moves.urllib.parse import quote
 from openprocurement.documentservice.tests.base import BaseWebTest
 from openprocurement.documentservice.storage import StorageUploadError
@@ -15,7 +17,7 @@ class SimpleTest(BaseWebTest):
         response = self.app.get('/')
         self.assertEqual(response.status, '200 OK')
         self.assertEqual(response.content_type, 'text/plain')
-        self.assertEqual(response.body, '')
+        self.assertEqual(response.body, b(''))
 
     def test_register_get(self):
         response = self.app.get('/register', status=404)
@@ -93,6 +95,7 @@ class SimpleTest(BaseWebTest):
         self.assertEqual(response.content_type, 'application/json')
         self.assertIn('http://upload-docs-sandbox.prozorro.gov.ua/upload/', response.json['upload_url'])
 
+    @pytest.mark.skipif(sys.version_info >= (3, 0), reason="requires python2")
     def test_upload_invalid(self):
         url = '/upload'
         response = self.app.post(url, 'data', status=404)
@@ -104,7 +107,7 @@ class SimpleTest(BaseWebTest):
         ])
 
     def test_upload_post(self):
-        response = self.app.post('/upload', upload_files=[('file', u'file.txt', 'content')])
+        response = self.app.post('/upload', upload_files=[('file', u'file.txt', b('content'))])
         self.assertEqual(response.status, '200 OK')
         self.assertEqual(response.content_type, 'application/json')
         self.assertIn('http://public-docs-sandbox.prozorro.gov.ua/get/', response.json['get_url'])
@@ -123,6 +126,7 @@ class SimpleTest(BaseWebTest):
 
     def test_upload_file_invalid(self):
         url = '/upload/uuid'
+        content = b('content')
         response = self.app.post(url, 'data', status=404)
         self.assertEqual(response.status, '404 Not Found')
         self.assertEqual(response.content_type, 'application/json')
@@ -131,7 +135,7 @@ class SimpleTest(BaseWebTest):
             {u'description': u'Not Found', u'location': u'body', u'name': u'file'}
         ])
 
-        response = self.app.post(url, upload_files=[('file', u'file.doc', 'content')], status=403)
+        response = self.app.post(url, upload_files=[('file', u'file.doc', content)], status=403)
         self.assertEqual(response.status, '403 Forbidden')
         self.assertEqual(response.content_type, 'application/json')
         self.assertEqual(response.json['status'], 'error')
@@ -139,7 +143,7 @@ class SimpleTest(BaseWebTest):
             {u'description': u'Not Found', u'name': u'Signature', u'location': u'url'}
         ])
 
-        response = self.app.post(url + '?KeyID=test', upload_files=[('file', u'file.doc', 'content')], status=403)
+        response = self.app.post(url + '?KeyID=test', upload_files=[('file', u'file.doc', content)], status=403)
         self.assertEqual(response.status, '403 Forbidden')
         self.assertEqual(response.content_type, 'application/json')
         self.assertEqual(response.json['status'], 'error')
@@ -147,7 +151,7 @@ class SimpleTest(BaseWebTest):
             {u'description': u'Key Id does not exist', u'name': u'KeyID', u'location': u'url'}
         ])
 
-        response = self.app.post(url + '?Signature=', upload_files=[('file', u'file.doc', 'content')], status=403)
+        response = self.app.post(url + '?Signature=', upload_files=[('file', u'file.doc', content)], status=403)
         self.assertEqual(response.status, '403 Forbidden')
         self.assertEqual(response.content_type, 'application/json')
         self.assertEqual(response.json['status'], 'error')
@@ -164,12 +168,13 @@ class SimpleTest(BaseWebTest):
         ])
 
     def test_upload_file_hash(self):
+        content = b('content')
         response = self.app.post('/register', {'hash': 'md5:' + '0' * 32, 'filename': 'file.txt'})
         self.assertEqual(response.status, '201 Created')
         self.assertEqual(response.content_type, 'application/json')
         self.assertIn('http://upload-docs-sandbox.prozorro.gov.ua/upload/', response.json['upload_url'])
 
-        response = self.app.post(response.json['upload_url'], upload_files=[('file', u'file.doc', 'content')], status=403)
+        response = self.app.post(response.json['upload_url'], upload_files=[('file', u'file.doc', content)], status=403)
         self.assertEqual(response.status, '403 Forbidden')
         self.assertEqual(response.content_type, 'application/json')
         self.assertEqual(response.json['status'], 'error')
@@ -178,7 +183,7 @@ class SimpleTest(BaseWebTest):
         ])
 
     def test_upload_file_post(self):
-        content = 'content'
+        content = b('content')
         md5hash = 'md5:' + md5(content).hexdigest()
         response = self.app.post('/register', {'hash': md5hash, 'filename': 'file.txt'})
         self.assertEqual(response.status, '201 Created')
@@ -186,19 +191,19 @@ class SimpleTest(BaseWebTest):
         self.assertIn('http://upload-docs-sandbox.prozorro.gov.ua/upload/', response.json['upload_url'])
         upload_url = response.json['upload_url']
 
-        response = self.app.post(upload_url, upload_files=[('file', u'file.txt', 'content')])
+        response = self.app.post(upload_url, upload_files=[('file', u'file.txt', content)])
         self.assertEqual(response.status, '200 OK')
         self.assertEqual(response.content_type, 'application/json')
         self.assertIn('http://public-docs-sandbox.prozorro.gov.ua/get/', response.json['get_url'])
 
-        response = self.app.post(upload_url, upload_files=[('file', u'file.txt', 'content')], status=403)
+        response = self.app.post(upload_url, upload_files=[('file', u'file.txt', content)], status=403)
         self.assertEqual(response.status, '403 Forbidden')
         self.assertEqual(response.content_type, 'application/json')
         self.assertEqual(response.json['errors'], [
             {u'description': u'Content already uploaded', u'name': u'doc_id', u'location': u'url'}
         ])
 
-        response = self.app.post(upload_url.replace('?', 'a?'), upload_files=[('file', u'file.doc', 'content')], status=403)
+        response = self.app.post(upload_url.replace('?', 'a?'), upload_files=[('file', u'file.doc', content)], status=403)
         self.assertEqual(response.status, '403 Forbidden')
         self.assertEqual(response.content_type, 'application/json')
         self.assertEqual(response.json['status'], 'error')
@@ -255,7 +260,7 @@ class SimpleTest(BaseWebTest):
             {u'description': u'Key Id does not exist', u'name': u'KeyID', u'location': u'url'}
         ])
 
-        response = self.app.post('/upload', upload_files=[('file', u'file.txt', '')])
+        response = self.app.post('/upload', upload_files=[('file', u'file.txt', b(''))])
         self.assertEqual(response.status, '200 OK')
         self.assertEqual(response.content_type, 'application/json')
         self.assertIn('http://public-docs-sandbox.prozorro.gov.ua/get/', response.json['get_url'])
@@ -264,13 +269,14 @@ class SimpleTest(BaseWebTest):
         self.assertEqual(response.status, '204 No Content')
 
     def test_get_hash(self):
-        md5hash = 'md5:' + md5('content').hexdigest()
+        content = b('content')
+        md5hash = 'md5:' + md5(content).hexdigest()
         response = self.app.post('/register', {'hash': md5hash, 'filename': 'file.txt'})
         self.assertEqual(response.status, '201 Created')
         self.assertEqual(response.content_type, 'application/json')
         self.assertIn('http://upload-docs-sandbox.prozorro.gov.ua/upload/', response.json['upload_url'])
 
-        response = self.app.post(response.json['upload_url'], upload_files=[('file', u'file.txt', 'content')])
+        response = self.app.post(response.json['upload_url'], upload_files=[('file', u'file.txt', content)])
         self.assertEqual(response.status, '200 OK')
         self.assertEqual(response.content_type, 'application/json')
         self.assertIn('http://public-docs-sandbox.prozorro.gov.ua/get/', response.json['get_url'])
@@ -278,10 +284,10 @@ class SimpleTest(BaseWebTest):
         response = self.app.get(response.json['get_url'])
         self.assertEqual(response.status, '200 OK')
         self.assertEqual(response.content_type, 'text/plain')
-        self.assertEqual(response.body, 'content')
+        self.assertEqual(response.body, b('content'))
 
     def test_get(self):
-        response = self.app.post('/upload', upload_files=[('file', u'file.txt', 'content')])
+        response = self.app.post('/upload', upload_files=[('file', u'file.txt', b('content'))])
         self.assertEqual(response.status, '200 OK')
         self.assertEqual(response.content_type, 'application/json')
         self.assertIn('http://public-docs-sandbox.prozorro.gov.ua/get/', response.json['get_url'])
@@ -289,7 +295,7 @@ class SimpleTest(BaseWebTest):
         response = self.app.get(response.json['get_url'])
         self.assertEqual(response.status, '200 OK')
         self.assertEqual(response.content_type, 'text/plain')
-        self.assertEqual(response.body, 'content')
+        self.assertEqual(response.body, b('content'))
 
     def test_storage_error(self):
         storage = self.app.app.registry.storage
@@ -301,7 +307,7 @@ class SimpleTest(BaseWebTest):
             ])
 
         with mock.patch.object(storage, 'upload', mock.Mock(side_effect=StorageUploadError('Some storage error'))):
-            content = 'content'
+            content = b('content')
             md5hash = 'md5:' + md5(content).hexdigest()
             response = self.app.post('/register', {'hash': md5hash, 'filename': 'file.txt'})
             self.assertEqual(response.status, '201 Created')
@@ -309,17 +315,18 @@ class SimpleTest(BaseWebTest):
             self.assertIn('http://upload-docs-sandbox.prozorro.gov.ua/upload/', response.json['upload_url'])
             upload_url = response.json['upload_url']
 
-            response = self.app.post(upload_url, upload_files=[('file', u'file.txt', 'content')], status=502)
+            response = self.app.post(upload_url, upload_files=[('file', u'file.txt', content)], status=502)
             self.assertEqual(response.status, '502 Bad Gateway')
             self.assertEqual(response.json['errors'], [
                 {u'description': u'Upload failed, please try again later'}
             ])
 
-            response = self.app.post('/upload', upload_files=[('file', u'file.txt', 'content')], status=502)
+            response = self.app.post('/upload', upload_files=[('file', u'file.txt', content)], status=502)
             self.assertEqual(response.status, '502 Bad Gateway')
             self.assertEqual(response.json['errors'], [
                 {u'description': u'Upload failed, please try again later'}
             ])
+
 
 def suite():
     suite = unittest.TestSuite()
