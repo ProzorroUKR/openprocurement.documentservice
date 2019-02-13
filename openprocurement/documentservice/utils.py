@@ -188,8 +188,9 @@ def file_request(view_callable):
 
 
 def signed_request(check_expire):
-    def decorator(view_callable, *args, **kwargs):
+    def decorator(view_callable):
         def inner(request):
+            kwargs = {}
             keyid = request.GET.get('KeyID', request.registry.dockey)
             if check_expire:
                 now = int(time())
@@ -217,7 +218,7 @@ def signed_request(check_expire):
                 signature = b64decode(unquote(signature))
             except TypeError:
                 raise RequestFailure(403, 'url', 'Signature', 'Signature invalid')
-            return view_callable(request, key, signature, *args, **kwargs)
+            return view_callable(request, key, signature, **kwargs)
         return inner
     return decorator
 
