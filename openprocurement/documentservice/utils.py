@@ -171,11 +171,18 @@ def verify_signature(key, mess, signature):
         raise RequestFailure(403, 'url', 'Signature', 'Signature does not match')
 
 
-def generate_route(request, name, uuid, params):
+def get_host(request):
+    return request.registry.get_host or request.domain
+
+
+def upload_host(request):
+    return request.registry.upload_host or request.domain
+
+
+def generate_route(request, name, uuid, host_func, params):
     query = {'KeyID': request.registry.dockey}
     query.update(params)
-    return request.route_url(name, doc_id=uuid, _query=query, _port=request.host_port,
-                             _host=request.registry.upload_host or request.domain)
+    return request.route_url(name, doc_id=uuid, _query=query, _port=request.host_port, _host=host_func(request))
 
 
 # Request decorators

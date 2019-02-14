@@ -3,7 +3,7 @@ from openprocurement.documentservice.storage import (
     StorageRedirect, HashInvalid, KeyNotFound, NoContent, ContentUploaded, StorageUploadError)
 from openprocurement.documentservice.utils import (
     error_handler, context_unpack, validate_md5, RequestFailure, get_data, file_request, signed_request,
-    verify_signature, sign_data, generate_route)
+    verify_signature, sign_data, generate_route, get_host, upload_host)
 from pyramid.httpexceptions import HTTPNoContent
 from pyramid.view import view_config
 from time import time
@@ -28,8 +28,8 @@ def register_view(request):
     LOGGER.info('Registered new document upload {}'.format(uuid), extra=context_unpack(request, {
         'MESSAGE_ID': 'registered_upload'}, {'doc_id': uuid, 'doc_hash': md5_hash}))
 
-    upload_url = generate_route(request, 'upload_file', uuid, {'Signature': sign_data(request.registry.signer, uuid)})
-    data['url'] = generate_route(request, 'get', uuid, {
+    upload_url = generate_route(request, 'upload_file', uuid, upload_host, {'Signature': sign_data(request.registry.signer, uuid)})
+    data['url'] = generate_route(request, 'get', uuid, get_host, {
         'Signature': sign_data(request.registry.signer, "{}\0{}".format(uuid, md5_hash[4:]))
     })
 
@@ -46,10 +46,10 @@ def upload_view(request):
     LOGGER.info('Uploaded new document {}'.format(uuid), extra=context_unpack(request, {
         'MESSAGE_ID': 'uploaded_new_document'}, {'doc_id': uuid, 'doc_hash': md5_hash}))
     expires = int(time()) + EXPIRES
-    url = generate_route(request, 'get', uuid, {
+    url = generate_route(request, 'get', uuid, get_host, {
         'Signature': sign_data(request.registry.signer, "{}\0{}".format(uuid, md5_hash[4:]))
     })
-    get_url = generate_route(request, 'get', uuid, {
+    get_url = generate_route(request, 'get', uuid, get_host, {
         'Signature': sign_data(request.registry.signer, "{}\0{}".format(uuid, expires)),
         'Expires': expires,
     })
@@ -76,10 +76,10 @@ def upload_file_view(request, key, signature):
     LOGGER.info('Uploaded document {}'.format(uuid),
                 extra=context_unpack(request, {'MESSAGE_ID': 'uploaded_document'}, {'doc_hash': md5_hash}))
     expires = int(time()) + EXPIRES
-    url = generate_route(request, 'get', uuid, {
+    url = generate_route(request, 'get', uuid, get_host, {
         'Signature': sign_data(request.registry.signer, "{}\0{}".format(uuid, md5_hash[4:]))
     })
-    get_url = generate_route(request, 'get', uuid, {
+    get_url = generate_route(request, 'get', uuid, get_host, {
         'Signature': sign_data(request.registry.signer, "{}\0{}".format(uuid, expires)),
         'Expires': expires,
     })
