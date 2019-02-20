@@ -19,12 +19,5 @@ test_python2:
   coverage: '/TOTAL\s+\d+\s+\d+\s+(\d+%)/'
 
 test_python3:
+  extends: test_python2
   image: python:3.6-jessie
-  stage: test
-  before_script:
-    - rm -f cgi.py cgi.pyc
-    - pip install -r requirements.txt
-    - pip install -e .[test]
-  script:
-    - py.test --cov=openprocurement.documentservice
-  coverage: '/TOTAL\s+\d+\s+\d+\s+(\d+%)/'

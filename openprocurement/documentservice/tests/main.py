@@ -2,8 +2,6 @@
 
 import mock
 import unittest
-import sys
-import pytest
 from hashlib import md5
 from six import BytesIO, b
 from six.moves.urllib.parse import quote
@@ -95,7 +93,6 @@ class SimpleTest(BaseWebTest):
         self.assertEqual(response.content_type, 'application/json')
         self.assertIn('http://upload-docs-sandbox.prozorro.gov.ua/upload/', response.json['upload_url'])
 
-    @pytest.mark.skipif(sys.version_info >= (3, 0), reason="requires python2")
     def test_upload_invalid(self):
         url = '/upload'
         response = self.app.post(url, 'data', status=404)
