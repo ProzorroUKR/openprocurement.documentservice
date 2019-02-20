@@ -14,8 +14,12 @@ repoze.lru==0.7
 six==1.12.0
 translationstring==1.3
 venusian==1.2.0
-WebOb==1.8.5
 zope.deprecation==4.4.0
 zope.interface==4.6.0
 
 git+https://github.com/ProzorroUKR/rfc6266.git
+git+https://github.com/ProzorroUKR/webob.git@improvement/cgi-unicode-filenames-fix-with-rfc6266
+# There is an issue in CGI lib  https://bugs.python.org/issue23434
+# in brief, it doesn't parse "filename*=" from content-disposition headers of request bodies
+# the field is supposed to pass utf8 encoded file names, this makes impossible handling files with non-ascii names
+# the workaround is patching cgi.FieldStorage.__init___ method within WebOb/compat.py
