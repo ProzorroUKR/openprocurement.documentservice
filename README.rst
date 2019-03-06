@@ -8,4 +8,18 @@
     :target: https://prozorro-openprocurementdocumentservice.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
 
-python -c "from libnacl.sign import Signer; k=Signer(); print 'private:', k.hex_seed(), '\npublic:', k.hex_vk()"
+Development install
+-------------------
+Use following command for install and run server::
+
+  pip install -e .[test,docs]
+  pserve config/service.ini --reload
+
+Generate dockey,dockeys::
+
+  python -c "from libnacl.sign import Signer; k=Signer(); print 'private:', k.hex_seed(), '\npublic:', k.hex_vk()"
+
+Generate docs::
+
+  python docs.py
+  cd docs && make html

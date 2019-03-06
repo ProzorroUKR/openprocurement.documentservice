@@ -1,6 +1,9 @@
 import os
-from ConfigParser import ConfigParser
+from six.moves.configparser import ConfigParser
+from base64 import b64decode, b64encode
 from datetime import datetime
+from time import time
+from six.moves.urllib.parse import unquote, quote
 from hashlib import sha512
 from json import dumps
 from logging import getLogger
@@ -53,7 +56,7 @@ def request_params(request):
         response.body = dumps(error_handler(request, response.code, {"location": "body", "name": "data", "description": "could not decode params"}))
         response.content_type = 'application/json'
         raise response
-    except Exception, e:
+    except Exception as e:
         response = exception_response(422)
         response.body = dumps(error_handler(request, response.code, {"location": "body", "name": str(e.__class__.__name__), "description": str(e)}))
         response.content_type = 'application/json'
@@ -127,3 +130,102 @@ def close_open_files(request):
 def new_request_subscriber(event):
     request = event.request
     request.add_finished_callback(close_open_files)
+
+
+class RequestFailure(Exception):
+    def __init__(self, status, location, name, description):
+        self.status = status
+        self.location = location
+        self.name = name
+        self.description = description
+
+
+def validate_md5(md5_hash):
+    if not md5_hash.startswith('md5:'):
+        raise RequestFailure(422, "body", "hash", [u'Hash type is not supported.'])
+    if len(md5_hash) != 36:
+        raise RequestFailure(422, "body", "hash", [u'Hash value is wrong length.'])
+    if set(md5_hash[4:]).difference('0123456789abcdef'):
+        raise RequestFailure(422, "body", "hash", [u'Hash value is not hexadecimal.'])
+
+
+def get_data(request):
+    try:
+        json = request.json_body
+    except ValueError:
+        data = request.POST.mixed()
+    else:
+        data = json.get('data', {})
+    return data
+
+
+def sign_data(signer, msg):
+    return quote(b64encode(signer.signature(msg)))
+
+
+def verify_signature(key, mess, signature):
+    try:
+        if mess != key.verify(signature + mess.encode('utf-8')):
+            raise ValueError
+    except ValueError:
+        raise RequestFailure(403, 'url', 'Signature', 'Signature does not match')
+
+
+def get_host(request):
+    return request.registry.get_host or request.domain
+
+
+def upload_host(request):
+    return request.registry.upload_host or request.domain
+
+
+def generate_route(request, name, uuid, host_func, params):
+    query = {'KeyID': request.registry.dockey}
+    query.update(params)
+    return request.route_url(name, doc_id=uuid, _query=query, _port=request.host_port, _host=host_func(request))
+
+
+# Request decorators
+def file_request(view_callable):
+    def inner(request):
+        if 'file' not in request.POST or not hasattr(request.POST['file'], 'filename'):
+            raise RequestFailure(404, 'body', 'file', 'Not Found')
+        return view_callable(request)
+    return inner
+
+
+def signed_request(check_expire):
+    def decorator(view_callable):
+        def inner(request):
+            kwargs = {}
+            keyid = request.GET.get('KeyID', request.registry.dockey)
+            if check_expire:
+                now = int(time())
+                expires = request.GET.get('Expires')
+                if expires:
+                    if expires.isdigit() and int(expires) < now:
+                        raise RequestFailure(403, 'url', 'Expires', 'Request has expired')
+                    else:
+                        kwargs['expires'] = int(expires)
+                if keyid not in (request.registry.apikey, request.registry.dockey) and not expires:
+                    raise RequestFailure(403, 'url', 'KeyID', 'Key Id does permit to get private document')
+                if keyid not in request.registry.keyring:
+                    raise RequestFailure(403, 'url', 'KeyID', 'Key Id does not exist')
+                key = request.registry.keyring.get(keyid)
+
+            else:
+                if keyid not in request.registry.dockeyring:
+                    raise RequestFailure(403, 'url', 'KeyID', 'Key Id does not exist')
+                key = request.registry.dockeyring.get(keyid)
+
+            if 'Signature' not in request.GET:
+                raise RequestFailure(403, 'url', 'Signature', 'Not Found')
+            signature = request.GET['Signature']
+            try:
+                signature = b64decode(unquote(signature))
+            except TypeError:
+                raise RequestFailure(403, 'url', 'Signature', 'Signature invalid')
+            return view_callable(request, key, signature, **kwargs)
+        return inner
+    return decorator
+

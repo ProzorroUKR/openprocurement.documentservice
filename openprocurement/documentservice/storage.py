@@ -1,7 +1,7 @@
 from email.header import decode_header
 from hashlib import md5
 from rfc6266 import build_header
-from urllib import quote
+from six.moves.urllib.parse import quote
 from uuid import uuid4
 
 

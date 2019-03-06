@@ -9,15 +9,10 @@ python:
 env:
   global:
     - TZ=Europe/Kiev
-cache:
-  directories:
-    - eggs
-before_install:
-  - pip install setuptools==7.0
-  - python2 bootstrap.py
+cache: pip
 install:
-  - bin/buildout -N
+  - pip install -r requirements-test.txt
 script:
-  - bin/nosetests
+  - py.test --cov=openprocurement.documentservice
 after_success:
-  - bin/coveralls
+  - coveralls

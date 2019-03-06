@@ -19,12 +19,15 @@ requires = [
     'setuptools',
 ]
 test_requires = requires + [
+    'pytest',
+    'pytest-cov',
     'webtest',
     'mock',
     'python-coveralls',
 ]
 docs_requires = requires + [
     'sphinxcontrib-httpdomain',
+    'sphinx-rtd-theme',
 ]
 entry_points = {
     'paste.app_factory': [
@@ -51,8 +54,7 @@ setup(name='openprocurement.documentservice',
       author_email='info@quintagroup.com',
       url='https://github.com/ProzorroUKR/openprocurement.documentservice',
       license='Apache License 2.0',
-      packages=find_packages(exclude=['ez_setup']),
-      py_modules=['cgi'],
+      packages=find_packages(),
       namespace_packages=['openprocurement'],
       include_package_data=True,
       zip_safe=False,

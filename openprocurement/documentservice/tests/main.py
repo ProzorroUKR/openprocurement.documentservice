@@ -4,7 +4,7 @@ import mock
 import unittest
 from hashlib import md5
 from six import BytesIO
-from urllib import quote
+from six.moves.urllib.parse import quote
 from openprocurement.documentservice.tests.base import BaseWebTest
 from openprocurement.documentservice.storage import StorageUploadError
 
@@ -86,12 +86,12 @@ class SimpleTest(BaseWebTest):
         response = self.app.post('/register', {'hash': 'md5:' + '0' * 32})
         self.assertEqual(response.status, '201 Created')
         self.assertEqual(response.content_type, 'application/json')
-        self.assertIn('http://localhost/upload/', response.json['upload_url'])
+        self.assertIn('http://localhost.upload/upload/', response.json['upload_url'])
 
         response = self.app.post_json('/register', {'data': {'hash': 'md5:' + '0' * 32}})
         self.assertEqual(response.status, '201 Created')
         self.assertEqual(response.content_type, 'application/json')
-        self.assertIn('http://localhost/upload/', response.json['upload_url'])
+        self.assertIn('http://localhost.upload/upload/', response.json['upload_url'])
 
     def test_upload_invalid(self):
         url = '/upload'
@@ -102,18 +102,6 @@ class SimpleTest(BaseWebTest):
         self.assertEqual(response.json['errors'], [
             {u'description': u'Not Found', u'location': u'body', u'name': u'file'}
         ])
-
-        body = u'''--BOUNDARY\nContent-Disposition: form-data; name="file"; filename={}\nContent-Type: application/msword\n\ncontent\n'''.format(u'\uff07')
-        environ = self.app._make_environ()
-        environ['CONTENT_TYPE'] = 'multipart/form-data; boundary=BOUNDARY'
-        environ['REQUEST_METHOD'] = 'POST'
-        req = self.app.RequestClass.blank(self.app._remove_fragment('/upload'), environ)
-        req.environ['wsgi.input'] = BytesIO(body.encode('utf8'))
-        req.content_length = len(body)
-        response = self.app.do_request(req, status=422)
-        self.assertEqual(response.status, '422 Unprocessable Entity')
-        self.assertEqual(response.content_type, 'application/json')
-        self.assertEqual(response.json['errors'][0]["description"], "could not decode params")
 
     def test_upload_post(self):
         response = self.app.post('/upload', upload_files=[('file', u'file.txt', 'content')])
@@ -171,7 +159,7 @@ class SimpleTest(BaseWebTest):
         response = self.app.post('/register', {'hash': 'md5:' + '0' * 32, 'filename': 'file.txt'})
         self.assertEqual(response.status, '201 Created')
         self.assertEqual(response.content_type, 'application/json')
-        self.assertIn('http://localhost/upload/', response.json['upload_url'])
+        self.assertIn('http://localhost.upload/upload/', response.json['upload_url'])
 
         response = self.app.post(response.json['upload_url'], upload_files=[('file', u'file.doc', 'content')], status=403)
         self.assertEqual(response.status, '403 Forbidden')
@@ -187,7 +175,7 @@ class SimpleTest(BaseWebTest):
         response = self.app.post('/register', {'hash': md5hash, 'filename': 'file.txt'})
         self.assertEqual(response.status, '201 Created')
         self.assertEqual(response.content_type, 'application/json')
-        self.assertIn('http://localhost/upload/', response.json['upload_url'])
+        self.assertIn('http://localhost.upload/upload/', response.json['upload_url'])
         upload_url = response.json['upload_url']
 
         response = self.app.post(upload_url, upload_files=[('file', u'file.txt', 'content')])
@@ -272,7 +260,7 @@ class SimpleTest(BaseWebTest):
         response = self.app.post('/register', {'hash': md5hash, 'filename': 'file.txt'})
         self.assertEqual(response.status, '201 Created')
         self.assertEqual(response.content_type, 'application/json')
-        self.assertIn('http://localhost/upload/', response.json['upload_url'])
+        self.assertIn('http://localhost.upload/upload/', response.json['upload_url'])
 
         response = self.app.post(response.json['upload_url'], upload_files=[('file', u'file.txt', 'content')])
         self.assertEqual(response.status, '200 OK')
@@ -310,7 +298,7 @@ class SimpleTest(BaseWebTest):
             response = self.app.post('/register', {'hash': md5hash, 'filename': 'file.txt'})
             self.assertEqual(response.status, '201 Created')
             self.assertEqual(response.content_type, 'application/json')
-            self.assertIn('http://localhost/upload/', response.json['upload_url'])
+            self.assertIn('http://localhost.upload/upload/', response.json['upload_url'])
             upload_url = response.json['upload_url']
 
             response = self.app.post(upload_url, upload_files=[('file', u'file.txt', 'content')], status=502)
