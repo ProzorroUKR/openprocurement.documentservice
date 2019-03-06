@@ -11,8 +11,7 @@ env:
     - TZ=Europe/Kiev
 cache: pip
 install:
-  - pip install -r requirements.txt
-  - pip install -e .[test]
+  - pip install -r requirements-test.txt
 script:
   - py.test --cov=openprocurement.documentservice
 after_success:
