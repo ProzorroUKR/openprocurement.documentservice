@@ -1,4 +1,5 @@
 import os
+
 from six.moves.configparser import ConfigParser
 from base64 import b64decode, b64encode
 from datetime import datetime
@@ -11,10 +12,12 @@ from pyramid.security import Allow
 from pyramid.httpexceptions import exception_response
 from pytz import timezone
 from webob.multidict import NestedMultiDict
+from pythonjsonlogger import jsonlogger
 
 LOGGER = getLogger(__name__)
 TZ = timezone(os.environ['TZ'] if 'TZ' in os.environ else 'Europe/Kiev')
 USERS = {}
+JOURNAL_PREFIX = os.environ.get('JOURNAL_PREFIX', 'JOURNAL_')
 
 
 def auth_check(username, password, request):
@@ -97,7 +100,7 @@ def context_unpack(request, msg, params=None):
     logging_context = request.logging_context
     journal_context = msg
     for key, value in logging_context.items():
-        journal_context["JOURNAL_" + key] = value
+        journal_context[JOURNAL_PREFIX + key] = value
     journal_context['JOURNAL_TIMESTAMP'] = datetime.now(TZ).isoformat()
     return journal_context
 
@@ -229,3 +232,8 @@ def signed_request(check_expire):
         return inner
     return decorator
 
+
+class FullJsonFormatter(jsonlogger.JsonFormatter):
+    def __init__(self, *args, **kwargs):
+        kwargs['reserved_attrs'] = []
+        super(FullJsonFormatter, self).__init__(*args, **kwargs)

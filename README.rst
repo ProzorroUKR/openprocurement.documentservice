@@ -12,8 +12,8 @@ Development install
 -------------------
 Use following command for install and run server::
 
-  pip install -e .[test,docs]
-  pserve config/service.ini --reload
+  pip install -r requirements.txt -e .[test,docs]
+  gunicorn -k gevent --paste config/service.ini --reload
 
 Generate dockey,dockeys::
 

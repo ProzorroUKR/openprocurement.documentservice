@@ -1,12 +1,18 @@
 image: docker:stable
 stages:
   - test
+  - publish
 
+include:
+  - project: 'cdb/openprocurement.documentservice.ci-configuration'
+    file: '.gitlab-ci-private.yml'
+
+    
 test:
   image: prozorro/base:ci
   stage: test
   before_script:
-    - pip install -r requirements-test.txt
+    - pip install -r requirements.txt -e .[test]
   script:
     - py.test --cov=openprocurement.documentservice
   coverage: '/TOTAL\s+\d+\s+\d+\s+(\d+%)/'

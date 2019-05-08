@@ -1,26 +1,26 @@
 POST /upload HTTP/1.0
 Authorization: Basic YnJva2VyOmJyb2tlcg==
 Content-Length: 179
-Content-Type: multipart/form-data; boundary=----------a_BoUnDaRy268861013861$
-Host: docs-sandbox.openprocurement.org
+Content-Type: multipart/form-data; boundary=----------a_BoUnDaRy662688408436$
+Host: upload-docs-sandbox.prozorro.gov.ua
 
-------------a_BoUnDaRy268861013861$
+------------a_BoUnDaRy662688408436$
 Content-Disposition: form-data; name="file"; filename="file.txt"
 Content-Type: text/plain
 
 content
-------------a_BoUnDaRy268861013861$--
+------------a_BoUnDaRy662688408436$--
 
 
 
 200 OK
-Content-Type: application/json; charset=UTF-8
-Location: http://docs-sandbox.openprocurement.org/get/8ccbfde0c6804143b119d9168452cb6f?Expires=1469462161&KeyID=d06070b8&Signature=dwZxxhFHS8BdfOrxSydmaOfLuadAsCrOF2w%2FVA%252Bfik3lViqozqytPhZGVzpP0NZ1RXFcSv0EgVTx0dZhLk9aBw%253D%253D
+Content-Type: application/json
+Location: http://public-docs-sandbox.prozorro.gov.ua/get/de6fddb8831444b8a6cb241749c0e226?KeyID=70f4a580&Expires=1557317176&Signature=WHHsECf3db5Ny689o1lx2thL%2Fh%252B1xs8QMQxrcR0%2FHxv5sH0Fd%2Ftq6xX%252BPap3NQkVZl0GMrR6fKD%252BEDUeDos%252BAQ%253D%253D
 
 {
-  "get_url": "http://docs-sandbox.openprocurement.org/get/8ccbfde0c6804143b119d9168452cb6f?Expires=1469462161&KeyID=d06070b8&Signature=dwZxxhFHS8BdfOrxSydmaOfLuadAsCrOF2w%2FVA%252Bfik3lViqozqytPhZGVzpP0NZ1RXFcSv0EgVTx0dZhLk9aBw%253D%253D", 
+  "get_url": "http://public-docs-sandbox.prozorro.gov.ua/get/de6fddb8831444b8a6cb241749c0e226?KeyID=70f4a580&Expires=1557317176&Signature=WHHsECf3db5Ny689o1lx2thL%2Fh%252B1xs8QMQxrcR0%2FHxv5sH0Fd%2Ftq6xX%252BPap3NQkVZl0GMrR6fKD%252BEDUeDos%252BAQ%253D%253D", 
   "data": {
-    "url": "http://docs-sandbox.openprocurement.org/get/8ccbfde0c6804143b119d9168452cb6f?KeyID=d06070b8&Signature=SNIIGIyE9QL2SBroR40gm%252BAHIAZyTOKJCrUxw8m7Jyy77%2FiVonIGDn2jLEE05lM6Nsmu0tDCfII%2Fa98KpntXDw%253D%253D", 
+    "url": "http://public-docs-sandbox.prozorro.gov.ua/get/de6fddb8831444b8a6cb241749c0e226?KeyID=70f4a580&Signature=d2Ew%2FlxXywklaEV%2FX3JBLOxH5sXx3oLlKf7cdRgRTNGW%2FoE43PoE0MmpK4UyrxxHi1%252BlyF6qvoBVZufP%2F65fDA%253D%253D", 
     "format": "text/plain", 
     "hash": "md5:9a0364b9e99bb480dd25e1f0284c8555", 
     "title": "file.txt"

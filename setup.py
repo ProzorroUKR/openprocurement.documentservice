@@ -9,7 +9,7 @@ with open(os.path.join(here, 'README.rst')) as f:
 version = '1.2.0'
 
 requires = [
-    'chaussette',
+    'gunicorn',
     'gevent',
     'libnacl',
     'pyramid',

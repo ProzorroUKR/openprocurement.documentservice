@@ -16,7 +16,7 @@ now = datetime.now()
 
 class DumpsTestAppwebtest(TestApp):
     def do_request(self, req, status=None, expect_errors=None):
-        req.headers.environ["HTTP_HOST"] = "docs-sandbox.openprocurement.org"
+        req.headers.environ["HTTP_HOST"] = "upload-docs-sandbox.prozorro.gov.ua"
         if hasattr(self, 'file_obj') and not self.file_obj.closed:
             self.file_obj.write(req.as_bytes(True))
             self.file_obj.write("\n\n")
@@ -59,13 +59,13 @@ class TenderResourceTest(BaseWebTest):
             response = self.app.post('/register', {'hash': md5hash})
             self.assertEqual(response.status, '201 Created')
             self.assertEqual(response.content_type, 'application/json')
-            self.assertIn('http://docs-sandbox.openprocurement.org/upload/', response.json['upload_url'])
+            self.assertIn('http://upload-docs-sandbox.prozorro.gov.ua/upload/', response.json['upload_url'])
 
         with open('docs/source/tutorial/upload.http', 'w') as self.app.file_obj:
             response = self.app.post(response.json['upload_url'], upload_files=[('file', u'file.txt', 'content')])
             self.assertEqual(response.status, '200 OK')
             self.assertEqual(response.content_type, 'application/json')
-            self.assertIn('http://docs-sandbox.openprocurement.org/get/', response.json['get_url'])
+            self.assertIn('http://public-docs-sandbox.prozorro.gov.ua/get/', response.json['get_url'])
 
         self.app.authorization = None
         with open('docs/source/tutorial/get.http', 'w') as self.app.file_obj:
@@ -80,13 +80,13 @@ class TenderResourceTest(BaseWebTest):
             response = self.app.post_json('/register', {'data': {'hash': md5hash}})
             self.assertEqual(response.status, '201 Created')
             self.assertEqual(response.content_type, 'application/json')
-            self.assertIn('http://docs-sandbox.openprocurement.org/upload/', response.json['upload_url'])
+            self.assertIn('http://upload-docs-sandbox.prozorro.gov.ua/upload/', response.json['upload_url'])
 
         with open('docs/source/tutorial/upload-file.http', 'w') as self.app.file_obj:
             response = self.app.post('/upload', upload_files=[('file', u'file.txt', 'content')])
             self.assertEqual(response.status, '200 OK')
             self.assertEqual(response.content_type, 'application/json')
-            self.assertIn('http://docs-sandbox.openprocurement.org/get/', response.json['get_url'])
+            self.assertIn('http://public-docs-sandbox.prozorro.gov.ua/get/', response.json['get_url'])
 
 
 def suite():

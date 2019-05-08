@@ -86,12 +86,12 @@ class SimpleTest(BaseWebTest):
         response = self.app.post('/register', {'hash': 'md5:' + '0' * 32})
         self.assertEqual(response.status, '201 Created')
         self.assertEqual(response.content_type, 'application/json')
-        self.assertIn('http://localhost.upload/upload/', response.json['upload_url'])
+        self.assertIn('http://upload-docs-sandbox.prozorro.gov.ua/upload/', response.json['upload_url'])
 
         response = self.app.post_json('/register', {'data': {'hash': 'md5:' + '0' * 32}})
         self.assertEqual(response.status, '201 Created')
         self.assertEqual(response.content_type, 'application/json')
-        self.assertIn('http://localhost.upload/upload/', response.json['upload_url'])
+        self.assertIn('http://upload-docs-sandbox.prozorro.gov.ua/upload/', response.json['upload_url'])
 
     def test_upload_invalid(self):
         url = '/upload'
@@ -107,7 +107,7 @@ class SimpleTest(BaseWebTest):
         response = self.app.post('/upload', upload_files=[('file', u'file.txt', 'content')])
         self.assertEqual(response.status, '200 OK')
         self.assertEqual(response.content_type, 'application/json')
-        self.assertIn('http://localhost/get/', response.json['get_url'])
+        self.assertIn('http://public-docs-sandbox.prozorro.gov.ua/get/', response.json['get_url'])
 
         body = u'''--BOUNDARY\nContent-Disposition: form-data; name="file"; filename*=utf-8''{}\nContent-Type: application/msword\n\ncontent\n'''.format(quote('укр.doc'))
         environ = self.app._make_environ()
@@ -119,7 +119,7 @@ class SimpleTest(BaseWebTest):
         response = self.app.do_request(req)
         self.assertEqual(response.status, '200 OK')
         self.assertEqual(response.content_type, 'application/json')
-        self.assertIn('http://localhost/get/', response.json['get_url'])
+        self.assertIn('http://public-docs-sandbox.prozorro.gov.ua/get/', response.json['get_url'])
 
     def test_upload_file_invalid(self):
         url = '/upload/uuid'
@@ -159,7 +159,7 @@ class SimpleTest(BaseWebTest):
         response = self.app.post('/register', {'hash': 'md5:' + '0' * 32, 'filename': 'file.txt'})
         self.assertEqual(response.status, '201 Created')
         self.assertEqual(response.content_type, 'application/json')
-        self.assertIn('http://localhost.upload/upload/', response.json['upload_url'])
+        self.assertIn('http://upload-docs-sandbox.prozorro.gov.ua/upload/', response.json['upload_url'])
 
         response = self.app.post(response.json['upload_url'], upload_files=[('file', u'file.doc', 'content')], status=403)
         self.assertEqual(response.status, '403 Forbidden')
@@ -175,13 +175,13 @@ class SimpleTest(BaseWebTest):
         response = self.app.post('/register', {'hash': md5hash, 'filename': 'file.txt'})
         self.assertEqual(response.status, '201 Created')
         self.assertEqual(response.content_type, 'application/json')
-        self.assertIn('http://localhost.upload/upload/', response.json['upload_url'])
+        self.assertIn('http://upload-docs-sandbox.prozorro.gov.ua/upload/', response.json['upload_url'])
         upload_url = response.json['upload_url']
 
         response = self.app.post(upload_url, upload_files=[('file', u'file.txt', 'content')])
         self.assertEqual(response.status, '200 OK')
         self.assertEqual(response.content_type, 'application/json')
-        self.assertIn('http://localhost/get/', response.json['get_url'])
+        self.assertIn('http://public-docs-sandbox.prozorro.gov.ua/get/', response.json['get_url'])
 
         response = self.app.post(upload_url, upload_files=[('file', u'file.txt', 'content')], status=403)
         self.assertEqual(response.status, '403 Forbidden')
@@ -250,7 +250,7 @@ class SimpleTest(BaseWebTest):
         response = self.app.post('/upload', upload_files=[('file', u'file.txt', '')])
         self.assertEqual(response.status, '200 OK')
         self.assertEqual(response.content_type, 'application/json')
-        self.assertIn('http://localhost/get/', response.json['get_url'])
+        self.assertIn('http://public-docs-sandbox.prozorro.gov.ua/get/', response.json['get_url'])
 
         response = self.app.get(response.json['get_url'])
         self.assertEqual(response.status, '204 No Content')
@@ -260,12 +260,12 @@ class SimpleTest(BaseWebTest):
         response = self.app.post('/register', {'hash': md5hash, 'filename': 'file.txt'})
         self.assertEqual(response.status, '201 Created')
         self.assertEqual(response.content_type, 'application/json')
-        self.assertIn('http://localhost.upload/upload/', response.json['upload_url'])
+        self.assertIn('http://upload-docs-sandbox.prozorro.gov.ua/upload/', response.json['upload_url'])
 
         response = self.app.post(response.json['upload_url'], upload_files=[('file', u'file.txt', 'content')])
         self.assertEqual(response.status, '200 OK')
         self.assertEqual(response.content_type, 'application/json')
-        self.assertIn('http://localhost/get/', response.json['get_url'])
+        self.assertIn('http://public-docs-sandbox.prozorro.gov.ua/get/', response.json['get_url'])
 
         response = self.app.get(response.json['get_url'])
         self.assertEqual(response.status, '200 OK')
@@ -276,7 +276,7 @@ class SimpleTest(BaseWebTest):
         response = self.app.post('/upload', upload_files=[('file', u'file.txt', 'content')])
         self.assertEqual(response.status, '200 OK')
         self.assertEqual(response.content_type, 'application/json')
-        self.assertIn('http://localhost/get/', response.json['get_url'])
+        self.assertIn('http://public-docs-sandbox.prozorro.gov.ua/get/', response.json['get_url'])
 
         response = self.app.get(response.json['get_url'])
         self.assertEqual(response.status, '200 OK')
@@ -298,7 +298,7 @@ class SimpleTest(BaseWebTest):
             response = self.app.post('/register', {'hash': md5hash, 'filename': 'file.txt'})
             self.assertEqual(response.status, '201 Created')
             self.assertEqual(response.content_type, 'application/json')
-            self.assertIn('http://localhost.upload/upload/', response.json['upload_url'])
+            self.assertIn('http://upload-docs-sandbox.prozorro.gov.ua/upload/', response.json['upload_url'])
             upload_url = response.json['upload_url']
 
             response = self.app.post(upload_url, upload_files=[('file', u'file.txt', 'content')], status=502)

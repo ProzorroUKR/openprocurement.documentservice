@@ -2,19 +2,19 @@ POST /register HTTP/1.0
 Authorization: Basic YnJva2VyOmJyb2tlcg==
 Content-Length: 43
 Content-Type: application/x-www-form-urlencoded
-Host: docs-sandbox.openprocurement.org
+Host: upload-docs-sandbox.prozorro.gov.ua
 
 hash=md5%3A9a0364b9e99bb480dd25e1f0284c8555
 
 
 201 Created
-Content-Type: application/json; charset=UTF-8
-Location: http://docs-sandbox.openprocurement.org/upload/a6754e7c32a542fcb9a56ca598064be3?KeyID=d06070b8&Signature=IMlA7SU1lQXGm7qGFBJQD7QEWv6K9ms9%2FcllUsQbbBLhWf48O5RVluaToch3Eopd%2FMoxXCozpL0gN6J65yeVCg%253D%253D
+Content-Type: application/json
+Location: http://upload-docs-sandbox.prozorro.gov.ua/upload/a1fdbe104e054212a53a29539dac1927?KeyID=70f4a580&Signature=KvnX8x3EmwDj1WR17o18BrTS9FGZZx8zcn8yDlAWuwsYqLRaAkalPI%252BXtz05e9Qf5Dz1fvnpoRX6Xkeao2NpCA%253D%253D
 
 {
-  "upload_url": "http://docs-sandbox.openprocurement.org/upload/a6754e7c32a542fcb9a56ca598064be3?KeyID=d06070b8&Signature=IMlA7SU1lQXGm7qGFBJQD7QEWv6K9ms9%2FcllUsQbbBLhWf48O5RVluaToch3Eopd%2FMoxXCozpL0gN6J65yeVCg%253D%253D", 
+  "upload_url": "http://upload-docs-sandbox.prozorro.gov.ua/upload/a1fdbe104e054212a53a29539dac1927?KeyID=70f4a580&Signature=KvnX8x3EmwDj1WR17o18BrTS9FGZZx8zcn8yDlAWuwsYqLRaAkalPI%252BXtz05e9Qf5Dz1fvnpoRX6Xkeao2NpCA%253D%253D", 
   "data": {
-    "url": "http://docs-sandbox.openprocurement.org/get/a6754e7c32a542fcb9a56ca598064be3?KeyID=d06070b8&Signature=sKX3ICZh%252B61vhvLGgfrs00jdo63IfIcdB247Z40FDCxxY4eG6h2v1fA0FNsTlbRiEQSzFar0DbenFvp6M7vbDg%253D%253D", 
+    "url": "http://public-docs-sandbox.prozorro.gov.ua/get/a1fdbe104e054212a53a29539dac1927?KeyID=70f4a580&Signature=g4MEkUGomA7Uwb7anw%252BCJTnhsrNPBsMKKUgybfQ72e7sIFx9%252BxPYukyJIsk%252B%2Fgw9kbqvMy6CLVQDKSltGjHECA%253D%253D", 
     "hash": "md5:9a0364b9e99bb480dd25e1f0284c8555"
   }
 }

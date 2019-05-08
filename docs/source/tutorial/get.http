@@ -1,5 +1,5 @@
-GET /get/a6754e7c32a542fcb9a56ca598064be3?Expires=1469462161&KeyID=d06070b8&Signature=mG1VowjmkivEAhiSrCYbcaKgbsiO8nOWau4my%252BVZHZsQrSZZXG3wPG6zVkUuTc2TLKJhd9wP%2F3S3jcZ5Jd7eBA%253D%253D HTTP/1.0
-Host: docs-sandbox.openprocurement.org
+GET /get/a1fdbe104e054212a53a29539dac1927?KeyID=70f4a580&Expires=1557317176&Signature=%2FrCXYPk0snfgOMd603FD000l7JNop3r4NeoquekeVqUpg6e0uQjtcQo%2FShdzrlFl1ujjJjA4GCj8qILtqVe%252BBA%253D%253D HTTP/1.0
+Host: upload-docs-sandbox.prozorro.gov.ua
 
 
 200 OK
