@@ -15,9 +15,11 @@ translationstring==1.3
 venusian==1.2.0
 zope.deprecation==4.4.0
 zope.interface==4.6.0
+python-json-logger==0.1.10
+gunicorn==19.9.0
 
+git+https://github.com/ProzorroUKR/request_id_middleware.git@0.1.2
 git+https://github.com/ProzorroUKR/rfc6266.git@0.0.6
-git+https://github.com/ProzorroUKR/chaussette.git@1.3.0+py3gevent
 
 git+https://github.com/ProzorroUKR/webob.git@1.8.5+unicode
 # There is an issue in CGI lib  https://bugs.python.org/issue23434

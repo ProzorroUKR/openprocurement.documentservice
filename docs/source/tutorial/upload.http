@@ -1,25 +1,25 @@
-POST /upload/a6754e7c32a542fcb9a56ca598064be3?KeyID=d06070b8&Signature=IMlA7SU1lQXGm7qGFBJQD7QEWv6K9ms9%2FcllUsQbbBLhWf48O5RVluaToch3Eopd%2FMoxXCozpL0gN6J65yeVCg%253D%253D HTTP/1.0
+POST /upload/a1fdbe104e054212a53a29539dac1927?KeyID=70f4a580&Signature=KvnX8x3EmwDj1WR17o18BrTS9FGZZx8zcn8yDlAWuwsYqLRaAkalPI%252BXtz05e9Qf5Dz1fvnpoRX6Xkeao2NpCA%253D%253D HTTP/1.0
 Authorization: Basic YnJva2VyOmJyb2tlcg==
 Content-Length: 179
-Content-Type: multipart/form-data; boundary=----------a_BoUnDaRy572732436472$
-Host: docs-sandbox.openprocurement.org
+Content-Type: multipart/form-data; boundary=----------a_BoUnDaRy188876221254$
+Host: upload-docs-sandbox.prozorro.gov.ua
 
-------------a_BoUnDaRy572732436472$
+------------a_BoUnDaRy188876221254$
 Content-Disposition: form-data; name="file"; filename="file.txt"
 Content-Type: text/plain
 
 content
-------------a_BoUnDaRy572732436472$--
+------------a_BoUnDaRy188876221254$--
 
 
 
 200 OK
-Content-Type: application/json; charset=UTF-8
+Content-Type: application/json
 
 {
-  "get_url": "http://docs-sandbox.openprocurement.org/get/a6754e7c32a542fcb9a56ca598064be3?Expires=1469462161&KeyID=d06070b8&Signature=mG1VowjmkivEAhiSrCYbcaKgbsiO8nOWau4my%252BVZHZsQrSZZXG3wPG6zVkUuTc2TLKJhd9wP%2F3S3jcZ5Jd7eBA%253D%253D", 
+  "get_url": "http://public-docs-sandbox.prozorro.gov.ua/get/a1fdbe104e054212a53a29539dac1927?KeyID=70f4a580&Expires=1557317176&Signature=%2FrCXYPk0snfgOMd603FD000l7JNop3r4NeoquekeVqUpg6e0uQjtcQo%2FShdzrlFl1ujjJjA4GCj8qILtqVe%252BBA%253D%253D", 
   "data": {
-    "url": "http://docs-sandbox.openprocurement.org/get/a6754e7c32a542fcb9a56ca598064be3?KeyID=d06070b8&Signature=qwiE1zcGeR7bPSTawNedZ0yUrx0OeW4mL1HbctBRHDYSxGI9Zom8gR0JUZFwmOlpxkpps0AJhnJ7j%2FgNFqQeBA%253D%253D", 
+    "url": "http://public-docs-sandbox.prozorro.gov.ua/get/a1fdbe104e054212a53a29539dac1927?KeyID=70f4a580&Signature=g4MEkUGomA7Uwb7anw%252BCJTnhsrNPBsMKKUgybfQ72e7sIFx9%252BxPYukyJIsk%252B%2Fgw9kbqvMy6CLVQDKSltGjHECA%253D%253D", 
     "format": "text/plain", 
     "hash": "md5:9a0364b9e99bb480dd25e1f0284c8555", 
     "title": "file.txt"
