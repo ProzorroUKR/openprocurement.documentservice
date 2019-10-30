@@ -101,7 +101,7 @@ def context_unpack(request, msg, params=None):
     journal_context = msg
     for key, value in logging_context.items():
         journal_context[JOURNAL_PREFIX + key] = value
-    journal_context['JOURNAL_TIMESTAMP'] = datetime.now(TZ).isoformat()
+    journal_context[JOURNAL_PREFIX + 'TIMESTAMP'] = datetime.now(TZ).isoformat()
     return journal_context
 
 
