@@ -226,7 +226,7 @@ def signed_request(check_expire):
             signature = request.GET['Signature']
             try:
                 signature = b64decode(unquote(signature))
-            except TypeError:
+            except (TypeError, ValueError):
                 raise RequestFailure(403, 'url', 'Signature', 'Signature invalid')
             return view_callable(request, key, signature, **kwargs)
         return inner

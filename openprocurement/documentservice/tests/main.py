@@ -155,6 +155,14 @@ class SimpleTest(BaseWebTest):
             {u'description': u'Signature does not match', u'name': u'Signature', u'location': u'url'}
         ])
 
+        response = self.app.post(url + '?Signature=тест', upload_files=[('file', u'file.doc', 'content')], status=403)
+        self.assertEqual(response.status, '403 Forbidden')
+        self.assertEqual(response.content_type, 'application/json')
+        self.assertEqual(response.json['status'], 'error')
+        self.assertEqual(response.json['errors'], [
+            {u'description': u'Signature invalid', u'name': u'Signature', u'location': u'url'}
+        ])
+
     def test_upload_file_hash(self):
         response = self.app.post('/register', {'hash': 'md5:' + '0' * 32, 'filename': 'file.txt'})
         self.assertEqual(response.status, '201 Created')
