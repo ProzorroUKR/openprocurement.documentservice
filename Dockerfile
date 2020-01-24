@@ -16,4 +16,4 @@ ENV JOURNAL_PREFIX=''
 
 EXPOSE 6543
 
-CMD ["gunicorn", "-w", "8", "-k", "gevent", "--paste", "etc/service.ini", "--graceful-timeout=60"]
+CMD ["chaussette", "paste:/app/etc/service.ini", "--host=0.0.0.0", "--port=6543", "--backend=gevent"]
