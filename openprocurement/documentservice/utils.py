@@ -58,12 +58,20 @@ def request_params(request):
         params = NestedMultiDict(request.GET, request.POST)
     except UnicodeDecodeError:
         response = exception_response(422)
-        response.body = dumps(error_handler(request, response.code, {"location": "body", "name": "data", "description": "could not decode params"}))
+        response.body = dumps(error_handler(
+            request,
+            response.code,
+            {"location": "body", "name": "data", "description": "could not decode params"}
+        ))
         response.content_type = 'application/json'
         raise response
     except Exception as e:
         response = exception_response(422)
-        response.body = dumps(error_handler(request, response.code, {"location": "body", "name": str(e.__class__.__name__), "description": str(e)}))
+        response.body = dumps(error_handler(
+            request,
+            response.code,
+            {"location": "body", "name": str(e.__class__.__name__), "description": str(e)}
+        ))
         response.content_type = 'application/json'
         raise response
     return params
