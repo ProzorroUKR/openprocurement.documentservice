@@ -5,9 +5,11 @@ from base64 import b64decode, b64encode
 from datetime import datetime
 from time import time
 from six.moves.urllib.parse import unquote, quote
+from six import b, text_type
 from hashlib import sha512
 from json import dumps
 from logging import getLogger
+from nacl.exceptions import BadSignatureError
 from pyramid.security import Allow
 from pyramid.httpexceptions import exception_response
 from pytz import timezone
@@ -21,7 +23,7 @@ JOURNAL_PREFIX = os.environ.get('JOURNAL_PREFIX', 'JOURNAL_')
 
 
 def auth_check(username, password, request):
-    if username in USERS and USERS[username]['password'] == sha512(password).hexdigest():
+    if username in USERS and USERS[username]['password'] == sha512(b(password)).hexdigest():
         return ['g:{}'.format(USERS[username]['group'])]
 
 
@@ -56,12 +58,20 @@ def request_params(request):
         params = NestedMultiDict(request.GET, request.POST)
     except UnicodeDecodeError:
         response = exception_response(422)
-        response.body = dumps(error_handler(request, response.code, {"location": "body", "name": "data", "description": "could not decode params"}))
+        response.body = dumps(error_handler(
+            request,
+            response.code,
+            {"location": "body", "name": "data", "description": "could not decode params"}
+        ))
         response.content_type = 'application/json'
         raise response
     except Exception as e:
         response = exception_response(422)
-        response.body = dumps(error_handler(request, response.code, {"location": "body", "name": str(e.__class__.__name__), "description": str(e)}))
+        response.body = dumps(error_handler(
+            request,
+            response.code,
+            {"location": "body", "name": str(e.__class__.__name__), "description": str(e)}
+        ))
         response.content_type = 'application/json'
         raise response
     return params
@@ -163,14 +173,16 @@ def get_data(request):
 
 
 def sign_data(signer, msg):
-    return quote(b64encode(signer.signature(msg)))
+    sign = signer.sign(b(msg)).signature
+    return quote(b64encode(sign))
 
 
 def verify_signature(key, mess, signature):
     try:
-        if mess != key.verify(signature + mess.encode('utf-8')):
-            raise ValueError
-    except ValueError:
+        if isinstance(mess, text_type):
+            mess = mess.encode('utf-8')
+        key.verify(mess, signature)
+    except BadSignatureError:
         raise RequestFailure(403, 'url', 'Signature', 'Signature does not match')
 
 

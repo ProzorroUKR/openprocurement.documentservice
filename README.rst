@@ -17,7 +17,11 @@ Use following command for install and run server::
 
 Generate dockey,dockeys::
 
-  python -c "from libnacl.sign import Signer; k=Signer(); print 'private:', k.hex_seed(), '\npublic:', k.hex_vk()"
+  from nacl.encoding import HexEncoder
+  from nacl.signing import SigningKey
+  k = SigningKey.generate()
+  private, public = k.encode(encoder=HexEncoder).decode(), k.verify_key.encode(encoder=HexEncoder).decode()
+  print ('private: {}\npublic: {}'.format(private, public))
 
 Generate docs::
 

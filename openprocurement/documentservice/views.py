@@ -7,6 +7,7 @@ from openprocurement.documentservice.utils import (
 from pyramid.httpexceptions import HTTPNoContent
 from pyramid.view import view_config
 from time import time
+import six
 
 LOGGER = getLogger(__name__)
 EXPIRES = 300
@@ -107,7 +108,11 @@ def get_view(request, key, signature, expires=None):
         return e.url
     else:
         request.response.content_type = doc['Content-Type']
-        request.response.content_disposition = doc['Content-Disposition']
+        if 'Content-Disposition' in doc:
+            header = doc['Content-Disposition']
+            if not isinstance(header, six.text_type):
+                header = six.text_type(header, encoding='utf8', errors='ignore')
+            request.response.content_disposition = header
         request.response.body = doc['Content']
         return request.response
 
