@@ -1,6 +1,7 @@
 import gevent.monkey
 gevent.monkey.patch_all()
-from libnacl.sign import Signer, Verifier
+from nacl.encoding import HexEncoder
+from nacl.signing import SigningKey, VerifyKey
 from openprocurement.documentservice.utils import auth_check, Root, add_logging_context, read_users, request_params, new_request_subscriber
 from pkg_resources import iter_entry_points
 from pyramid.authentication import BasicAuthAuthenticationPolicy
@@ -30,17 +31,22 @@ def main(global_config, **settings):
     config.add_route('get', '/get/{doc_id}')
     config.scan(ignore='openprocurement.documentservice.tests')
 
-    config.registry.signer = signer = Signer(settings.get('dockey', '').decode('hex'))
-    config.registry.dockey = dockey = signer.hex_vk()[:8]
-    verifier = Verifier(signer.hex_vk())
-    config.registry.dockeyring = dockeyring = {dockey: verifier}
-    dockeys = settings.get('dockeys') if 'dockeys' in settings else Signer().hex_vk()
+    signing_key = settings.get('dockey', '')
+    signer = SigningKey(signing_key, encoder=HexEncoder) if signing_key else SigningKey.generate()
+    config.registry.signer = signer
+
+    verifier = signer.verify_key
+    config.registry.dockey = dockey = verifier.encode(encoder=HexEncoder)[:8].decode()
+    config.registry.keyring = keyring = config.registry.dockeyring = dockeyring = {dockey: verifier}
+
+    dockeys = settings.get('dockeys', SigningKey.generate().verify_key.encode(encoder=HexEncoder).decode())
     for key in dockeys.split('\0'):
-        dockeyring[key[:8]] = Verifier(key)
-    config.registry.keyring = keyring = {dockey: verifier}
-    apikeys = settings.get('apikeys') if 'apikeys' in settings else Signer().hex_vk()
+        dockeyring[key[:8]] = VerifyKey(key, encoder=HexEncoder)
+
+    apikeys = settings.get('apikeys', SigningKey.generate().verify_key.encode(encoder=HexEncoder).decode())
     for key in apikeys.split('\0'):
-        keyring[key[:8]] = Verifier(key)
+        keyring[key[:8]] = VerifyKey(key, encoder=HexEncoder)
+
     config.registry.apikey = key[:8]
 
     config.registry.upload_host = settings.get('upload_host')
