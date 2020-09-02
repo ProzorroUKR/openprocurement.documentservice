@@ -27,3 +27,7 @@ Generate docs::
 
   python docs.py
   cd docs && make html
+
+Notes:
+
+JOURNAL_PREFIX env var should be the same as for https://git.prozorro.gov.ua/cdb/ds_reports service
