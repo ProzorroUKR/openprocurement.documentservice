@@ -7,4 +7,4 @@ RUN apt-get update && apt-get install -y --no-install-recommends git
 RUN pip install --upgrade pip && pip install -r requirements.txt .
 RUN rm -f cgi.py cgi.pyc
 RUN pip install -e .
-CMD ["gunicorn", "-w", "8", "-k", "gevent", "--paste", "config/service.ini", "--graceful-timeout=60"]
+CMD ["gunicorn", "-w", "4", "-k", "gevent", "--paste", "config/service.ini", "--graceful-timeout=60"]
