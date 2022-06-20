@@ -8,11 +8,28 @@ from pyramid.authentication import BasicAuthAuthenticationPolicy
 from pyramid.authorization import ACLAuthorizationPolicy
 from pyramid.config import Configurator
 from pyramid.events import ContextFound, NewRequest
+from sentry_sdk.integrations.logging import LoggingIntegration
+from sentry_sdk.integrations.pyramid import PyramidIntegration
+import os
+import sentry_sdk
 
 
 def main(global_config, **settings):
     """ This function returns a Pyramid WSGI application.
     """
+    dsn = settings.get("sentry.dsn") or os.environ.get("SENTRY_DSN")
+    if dsn:
+        sentry_sdk.init(
+            dsn=dsn,
+            integrations=[
+                LoggingIntegration(),
+                PyramidIntegration(),
+            ],
+            send_default_pii=True,
+            request_bodies="always",
+            environment=settings.get("sentry.environment"),
+        )
+
     read_users(settings['auth.file'])
     config = Configurator(
         settings=settings,
